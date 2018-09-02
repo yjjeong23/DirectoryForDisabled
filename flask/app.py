@@ -15,6 +15,7 @@ import datetime as dt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
 import numpy as np
+import sqlite3
 
 
 env=jinja2.Environment()
@@ -25,8 +26,8 @@ long =0
 si=0
 bun=0
 
-import sqlite3
 
+#Maching Learning - calltaxi wating time
 conn = sqlite3.connect('db/Chopin.db')
 cur = conn.cursor()
 cur.execute("SELECT time, long, Wait, cool, type24,Day FROM Mus")
@@ -120,6 +121,7 @@ con1.close()
 con2.close()
 
 
+#classes for subpath
 class Pedestrian:
     # TMap API 호출 결과 반환
     def __init__(self, sx, sy, ex, ey):
@@ -282,47 +284,42 @@ def fullroute(sx, sy, ex, ey):  # 이용자가 입력한 출발, 목적지
                 if sub['trafficType'] == 1:  # 지하철
                     print(sub['startName'])
                     if 'startExitNo' in sub.keys():
-                        print(sub['startExitNo'] + "번출구", sub['startExitX'], sub['startExitY'])
                         # 승강기 DB와 비교해서 해당 출구에 승강기가 없으면(or 사용불가능) 다른 출구로 update
                         # 승강기와 연결된 출구가 없다면 better=False, break
-                        # check = 0
-                        # if sub['startName'] in list(df1.station.unique()):
-                        #     for k in list(df1[df1.station == sub['startName']]).inner_path:
-                        #         temp = k.split('↔')
-                        #         if sub['startExitNo'] == temp[-1][0:-4]:
-                        #             check = 1
-                        #     if check == 0:  # 해당 출구 없음, 다른 출구로 update
-                        #         sub['startExitNo'] = \
-                        #         list(df1[df1.station == sub['startName']].inner_path)[0].split('↔')[-1][1:-4]
-                        # else:
-                        #     better = False
-                        #     break
-                        # 좌표 수정해야함
+                        check = 0
+                        if sub['startName'] in list(df1.station.unique()):
+                            for k in list(df1[df1.station == sub['startName']]).inner_path:
+                                temp = k.split('↔')
+                                if sub['startExitNo'] == temp[-1][0:-4]:
+                                    check = 1
+                            if check == 0:  # 해당 출구 없음, 다른 출구로 update
+                                sub['startExitNo'] = \
+                                list(df1[df1.station == sub['startName']].inner_path)[0].split('↔')[-1][1:-4]
+                        else:
+                            better = False
+                            break
 
-                    #                     print(sub['endName'])
+                            
                     if 'endExitNo' in sub.keys():
-                        print(sub['endExitNo']+"번출구!")
                         # 승강기 DB와 비교해서 해당 출구에 승강기가 없으면 다른 출구로 update
                         # 승강기와 연결된 출구가 없다면 better=False, break
-                        # check = 0
-                        # if sub['endName'] in list(df1.station.unique()):
-                        #     for k in list(df1[df1.station == sub['endName']]).inner_path:
-                        #         temp = k.split('↔')
-                        #         if sub['endExitNo'] == temp[-1][0:-4]:
-                        #             check = 1
-                        #     if check == 0:  # 해당 출구 없음, 다른 출구로 update
-                        #         sub['endExitNo'] = list(df1[df1.station == sub['endName']].inner_path)[0].split('↔')[
-                        #                                -1][1:-4]
-                        # else:
-                        #     better = False
-                        #     break
-                        # 좌표 수정해야함
-                #                     print()
+                        check = 0
+                        if sub['endName'] in list(df1.station.unique()):
+                            for k in list(df1[df1.station == sub['endName']]).inner_path:
+                                temp = k.split('↔')
+                                if sub['endExitNo'] == temp[-1][0:-4]:
+                                    check = 1
+                            if check == 0:  # 해당 출구 없음, 다른 출구로 update
+                                sub['endExitNo'] = list(df1[df1.station == sub['endName']].inner_path)[0].split('↔')[
+                                                       -1][1:-4]
+                        else:
+                            better = False
+                            break
+                            
                 elif sub['trafficType'] == 2:  # 버스
                     temp_lane = []
                     for l in sub['lane']:
                         if l['busID'] in low_bus:
-                            print(l['busID'])
                             temp_lane.append(l)
                     # sub['lane'] = temp_lane
                     if not temp_lane:
@@ -342,6 +339,7 @@ def fullroute(sx, sy, ex, ey):  # 이용자가 입력한 출발, 목적지
             print(resultObj['error'])
 
 
+            
 def eachroute(better_path, si, bun):
     if type(better_path) == list:
         XY = better_path[1]
@@ -395,7 +393,6 @@ def eachroute(better_path, si, bun):
 
                     onepath[idx] = Subway(on, way, code, num, off, tm, swtime, exit, desc, walkdesc, output_path)
 
-                    # onepath[idx] = Subway(on, way, code, num, off, tm, "10:00", "4", desc, "temp")
 
 
                     onepath['totaltime'] += tm
@@ -452,16 +449,12 @@ def eachroute(better_path, si, bun):
                         onepath['totalwalk'] += onepath[idx].totaltime
 
                     else:
-                        #                         onepath['pass'] = []
 
                         if subPath[index - 1]['trafficType'] == 1 and subPath[index + 1][
                             'trafficType'] == 1:  # 지하철 - 지하철 환승
                             station = subPath[index - 1]['endName']
                             fromlane = subPath[index - 1]['lane'][0]['subwayCode']
                             tolane = subPath[index + 1]['lane'][0]['subwayCode']
-                            # print(station+"역의 " +str(fromlane)+"호선에서 "+str(tolane)+"호선으로 환승")
-                            # 해당 지하철역의 from호선 -> to호선까지 환승시에 걸리는 시간만큼 subPath[index]['sectionTime'] 증가
-                            #                             onepath[idx] = "{}역의 {}호선에서 {}호선으로 환승".format(station, fromlane, tolane)
 
                             # 환승 시간 플러스
                             for i in list(df2[df2.station == station].from_to):
@@ -469,7 +462,6 @@ def eachroute(better_path, si, bun):
                                     sectionTm = int(list(df2[df2.station == station][df2.from_to == i].time)[0][:-1])
                                     break
 
-                            #                             sectionTm = subPath[index]['sectionTime'] + 0
                             onepath[idx] = {'station': station, 'fromlane': fromlane, 'tolane': tolane,
                                             'sectionTm': sectionTm}
                             onepath['totaltime'] += sectionTm
@@ -537,24 +529,12 @@ def index():
         gudongXY[gu] = {}
         dong = address[address.GU == gu]
         for i in dong.DONG.unique():
-            # gudongXY[gu][i] = [dong[address.DONG == i].PosX.iloc[0], dong[address.DONG == i].PosY.iloc[0]]
             gudongXY[gu][i] = [dong[dong.DONG == i].PosX.iloc[0], dong[dong.DONG == i].PosY.iloc[0]]
 
-        # return render_template('index.html', address=gudong, month=month, day=day)
     xy = json.dumps(gudongXY)
     return render_template('index.html', XY = xy, address=gudong, month=month, day=day)
 
 
-
-#
-# @app.route('/getpath', methods=['POST'])
-# def get_path():
-#     if rq.method=="POST":
-#         XY = rq.get_json()
-#         sx = XY[0]
-#         print(sx)
-#
-# 	return '', 200
 
 
 stX = 126.977022
@@ -605,7 +585,6 @@ def full():   #출발, 목적지 좌표를 입력받아 경로를 객체로 반�
 
 
         full = fullroute(stX, stY, eX, eY)
-        print(len(full))
         if len(full[0]) > 7:
             full[0] = full[0][:7]
 
@@ -623,24 +602,11 @@ def full():   #출발, 목적지 좌표를 입력받아 경로를 객체로 반�
 
         try:
             g_pathList = pathList
-
-
-            # taxi_wait = 20
             taxi_wait = Oracle(si, long)
-
-            if taxi_wait > 150:
-                taxi_wait = rd.randint(10, 150)
-
-            print("OK")
             return redirect(url_for('getfull'))  # 모든 경로를 대중교통 타입에 따라 구분하여 화면에 보여주는 html
 
         except:
-            # taxi_wait = 20
             taxi_wait = Oracle(si, long)
-
-            if taxi_wait > 150:
-                taxi_wait = rd.randint(10, 150)
-
             return redirect(url_for('gettemp'))
 
 
@@ -661,7 +627,6 @@ def subpath(onepath):  # 하나의 경로를 구성하는 subpath들을 보여�
     for p in path:
         if type(p) == int:
             subpaths.append(path[p])
-    # print(subpaths)
 
     si = int(departTm[0:2])
     bun = int(departTm[3:])
@@ -678,10 +643,6 @@ def gettemp():
     stY = 37.565997
     eX = 126.994582
     eY = 37.561439
-    # stX = 126.98633091799877
-    # stY = 37.56111050727452
-    # eX = 127.02885525431152
-    # eY = 37.52681131579078
     wkDay = "8월27일"
     departTm = "08:00"
 
@@ -691,12 +652,10 @@ def gettemp():
 
 
     full = fullroute(stX, stY, eX, eY)
-    print(len(full))
     if len(full[0]) > 7:
         full[0] = full[0][:7]
 
     pathList = eachroute(full, si, bun)
-    print(2222)
 
     global g_pathList
     g_pathList = pathList
@@ -704,27 +663,8 @@ def gettemp():
     # taxi_wait = 20
     taxi_wait = Oracle(si, long)
 
-    if taxi_wait > 150:
-        taxi_wait = rd.randint(10, 150)
-
-    print("OK")
     return render_template("fullpath.html", pathList=pathList, taxi_wait = taxi_wait)
 
-
-
-@app.route('/temp')
-def temp():
-    path = g_pathList[1]
-    subpaths = []
-
-    for p in path:
-        # print(type(path[p]))
-        # print(path[p])
-        if type(p)==int:
-            subpaths.append(path[p])
-    print(subpaths)
-
-    return render_template("subpath.html", path=subpaths, departTm = departTm)
 
 
 if __name__ == '__main__':
