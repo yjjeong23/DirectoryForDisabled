@@ -56,7 +56,7 @@
 
 
 
-                // 2. 시작, 도착 심볼찍기
+                // 시작, 도착 심볼찍기
                 // 시작
                 var markerStartLayer = new Tmap.Layer.Markers("start");
                 map.addLayer(markerStartLayer);
@@ -79,7 +79,7 @@
 
 
 
-                // 5. 경로 탐색  결과 Line 그리기
+                //경로 탐색  결과 Line 그리기
                 //경로 탐색  결과 POINT 찍기
                 /* -------------- Geometry.Point -------------- */
                 var pointLayer = new Tmap.Layer.Vector("point");
@@ -148,7 +148,7 @@
 
 
 
-                // 6. 경로탐색 결과 반경만큼 지도 레벨 조정
+                //경로탐색 결과 반경만큼 지도 레벨 조정
                 map.zoomToExtent(routeLayer.getDataExtent());
 
                 //document.write(route_text);
